@@ -6,11 +6,13 @@
 
 #include "app_eddi.h"
 
+
 #define LED0_NODE DT_ALIAS(led0)
 #define I2C_DEV_NODE DT_NODELABEL(i2c1)
+#define I2C_EDDI_ADDR 0x05
 
 #define APP_EDDI_STACKSIZE	2048
-#define I2C_EDDI_ADDR 0x05
+
 
 LOG_MODULE_REGISTER(app_main);
 
@@ -19,7 +21,8 @@ LOG_MODULE_REGISTER(app_main);
 struct k_thread eddi_thread;
 K_THREAD_STACK_DEFINE(eddi_stack, APP_EDDI_STACKSIZE);
 
-APP_EDDI_BSS static const struct device *const i2c_dev = DEVICE_DT_GET(I2C_DEV_NODE);
+
+static const struct device *const i2c_dev = DEVICE_DT_GET(I2C_DEV_NODE);
 APP_EDDI_DATA uint32_t i2c_cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_CONTROLLER;
 
 int main(void)
@@ -54,6 +57,8 @@ int main(void)
 		printf("I2C get_config returned invalid config\n");
 		return 0;
 	}
+
+    setup_eddi ()
 
 	/* Spawn supervisor entry for application A */
 	thread_a = k_thread_create(&eddi_thread, eddi_thread, APP_EDDI_STACKSIZE,

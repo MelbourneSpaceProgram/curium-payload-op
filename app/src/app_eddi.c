@@ -8,6 +8,7 @@
 #include <zephyr/device.h>
 #include <zephyr/sys/libc-hooks.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/gpio.h>
 
 #include "app_eddi.h"
 
@@ -48,24 +49,21 @@ K_THREAD_STACK_DEFINE(writeback_stack, 2048);
  * app_a_partition.
  */
 
-#define EDDI_STATE_IDLE 0
-#define EDDI_STATE_ON 1
-#define EDDI_STATE_EXP 2
-#define EDDI_STATE_DL 3
 
-APP_EDDI_DATA uint8_t eddi_state = EDDI_STATE_IDLE;
-APP_EDDI_DATA uint8_t eddi_mode_flag = 5 << 5; //debris mode
-APP_EDDI_DATA uint8_t eddit_gain_flag = 0 << 3; // x2 (6dB)
-APP_EDDI_DATA uint8_t eddit_runtime_flag = 5; // 90min (5*18)
 
 uint8_t meet_exp_cond ()
 {
-  // conditions:
-  // 1. in payload op mode
-  // 2. health indicator checked
-  // 3. antenna deployed
+    // conditions:
+    // 1. in payload op mode
+    // 2. health indicator checked
 
-  return 0;
+    // 3. antenna deployed
+    if (gpio_pin_get_dt(&ant_pin) == 0) {
+        return 0
+    }
+
+    // all checked through
+    return 1;
 }
 
 uint8_t has_complete_orbit ()
@@ -123,7 +121,7 @@ uint8_t check_state ()
     rt = meet_turnon_cond ();
     break;
   case EDDI_STATE_ON:
-    rt = has_deployed_antenna ();
+    rt = meet_exp_cond ();
     break;
   case EDDI_STATE_EXP:
     rt = has_complete_orbit (); 
@@ -184,4 +182,11 @@ void app_eddi(void *p1, void *p2, void *p3)
     }
 
   }
+}
+
+void setup_eddi ()
+{
+
+    // configure antenna pin
+    gpio_pin_configure_dt (&ant_pin, GPIO_INPUT)
 }
