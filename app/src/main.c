@@ -5,11 +5,10 @@
 #include <zephyr/logging/log.h>
 
 #include "app_eddi.h"
+// #include "utility.h"
 
 
 #define LED0_NODE DT_ALIAS(led0)
-#define I2C_DEV_NODE DT_NODELABEL(i2c1)
-#define I2C_EDDI_ADDR 0x05
 
 #define APP_EDDI_STACKSIZE	2048
 
@@ -22,21 +21,24 @@ struct k_thread eddi_thread;
 K_THREAD_STACK_DEFINE(eddi_stack, APP_EDDI_STACKSIZE);
 
 
-static const struct device *const i2c_dev = DEVICE_DT_GET(I2C_DEV_NODE);
-APP_EDDI_DATA uint32_t i2c_cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_CONTROLLER;
+// extern struct sys_heap shared_pool;
+// extern uint8_t shared_pool_mem[HEAP_BYTES];
+
+const struct device *const i2c_dev = DEVICE_DT_GET(I2C_DEV_NODE);
+uint32_t i2c_cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_CONTROLLER;
 
 int main(void)
 {
 	k_tid_t thread_eddi;
 	uint32_t i2c_cfg_tmp;
 
-	LOG_INF("APP A partition: %p %zu", (void *)app_eddi_partition.start,
-		(size_t)app_eddi_partition.size);
+	// LOG_INF("APP A partition: %p %zu", (void *)app_eddi_partition.start,
+	// 	(size_t)app_eddi_partition.size);
 #ifdef Z_LIBC_PARTITION_EXISTS
-	LOG_INF("libc partition: %p %zu", (void *)z_libc_partition.start,
-		(size_t)z_libc_partition.size);
+	// LOG_INF("libc partition: %p %zu", (void *)z_libc_partition.start,
+	// 	(size_t)z_libc_partition.size);
 #endif
-	sys_heap_init(&shared_pool, shared_pool_mem, HEAP_BYTES);
+	// sys_heap_init(&shared_pool, shared_pool_mem, HEAP_BYTES);
 
 	//set up I2C
 	if (!device_is_ready(i2c_dev)) {
@@ -58,13 +60,13 @@ int main(void)
 		return 0;
 	}
 
-    setup_eddi ()
+    setup_eddi ();
 
 	/* Spawn supervisor entry for application A */
-	thread_a = k_thread_create(&eddi_thread, eddi_thread, APP_EDDI_STACKSIZE,
+	thread_eddi = k_thread_create(&eddi_thread, eddi_stack, APP_EDDI_STACKSIZE,
 				   app_eddi, NULL, NULL, NULL,
 				   -1, K_USER, K_NO_WAIT);
 
-	k_thread_join(thread_a, K_FOREVER);
+	k_thread_join(thread_eddi, K_FOREVER);
 	return 0;
 }
